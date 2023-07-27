@@ -2,7 +2,7 @@ import Posts from "./components/Posts";
 import MyProfilePic from './components/MyProfilePic'
 
 
-export const revalidate = 10;
+export const revalidate = 86400;
 
 export default function Home() {
   return (
@@ -14,6 +14,7 @@ export default function Home() {
           I'm <span className="font-bold">Alexis</span>.
         </span>
       </p>
+      {/* @ts-expect-error Server Component */}
       <Posts />
     </div>
   );
