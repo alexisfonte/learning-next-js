@@ -1,0 +1,3 @@
+[submodule "next12"]
+	path = next12
+	url = https://github.com/alexisfonte/nextjs-12-mdx-blog
