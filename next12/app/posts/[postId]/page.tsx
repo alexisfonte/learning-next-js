@@ -1,7 +1,9 @@
 import getFormattedDate from "@/lib/getFormattedDate";
-import { getPostData, getSortedPostsData } from "@/lib/posts";
-import Link from "next/link";
+import { getPostsMeta, getPostByName } from "@/lib/posts";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+
+export const revalidate = 0;
 
 type Props = {
   params: {
@@ -9,54 +11,57 @@ type Props = {
   };
 };
 
-export function generateStaticParams(){
-    const posts = getSortedPostsData();
+// export async function generateStaticParams(){
+//     const posts = await getPostsMeta();
 
-    return posts.map((post) => ({
-        postId: post.id
-    }))
-}
+//     if (!posts) return []
 
-export function generateMetadata({ params }: Props) {
-    const posts = getSortedPostsData();
-    const { postId } = params;
-  
-    const post = posts.find((post) => post.id === postId)
+//     return posts.map((post) => ({
+//         postId: post.id
+//     }))
+// }
 
-    if (!post) {
-        return{
-            title: "Post Not Found"
-        }
-    }
+export async function generateMetadata({ params: { postId } }: Props) {
+  const post = await getPostByName(`${postId}.mdx`);
 
-    return{
-        title: post.title
-    }
-}
-
-export default async function Post({ params }: Props) {
-  const posts = getSortedPostsData();
-  const { postId } = params;
-
-  if (!posts.find((post) => post.id === postId)) {
-    return notFound();
+  if (!post) {
+    return {
+      title: "Post Not Found",
+    };
   }
 
-  const { title, date, contentHtml } = await getPostData(postId)
+  return {
+    title: post.meta.title,
+  };
+}
 
-  const pubDate = getFormattedDate(date)
+export default async function Post({ params: { postId } }: Props) {
+  const post = await getPostByName(`${postId}.mdx`);
 
+  if (!post) notFound();
+
+  const { meta, content } = post;
+
+  const pubDate = getFormattedDate(meta.date);
+
+  const tags = meta.tags.map((tag, i) => (
+    <Link key={i} href={`/tags/${tag}`}>
+      {tag}
+    </Link>
+  ));
 
   return (
-    <main className="px-6 prose prose-xl prose-slate dark:prose-invert mx-auto">
-        <h1 className="text-3xl mt-4 mb-0">{title}</h1>
-        <p className="mt-0">{pubDate}</p>
-        <article>
-            <section dangerouslySetInnerHTML={{ __html: contentHtml  }} />
-            <p>
-                <Link href="/">← Back to Home</Link>
-            </p>
-        </article>
-    </main>
+    <>
+      <h2 className="text-3xl mt-4 mb-0">{meta.title}</h2>
+      <p className="mt-0 text-sm">{pubDate}</p>
+      <article>{content}</article>
+      <section>
+        <h3>Related:</h3>
+        <div className="flex flex-row gap-4">{tags}</div>
+      </section>
+      <p className="mb-10">
+        <Link href="/">← Back to Home</Link>
+      </p>
+    </>
   );
 }
